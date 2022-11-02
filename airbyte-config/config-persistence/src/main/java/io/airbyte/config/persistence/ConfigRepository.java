@@ -24,6 +24,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import io.airbyte.commons.enums.Enums;
 import io.airbyte.commons.json.Jsons;
 import io.airbyte.commons.lang.MoreBooleans;
 import io.airbyte.commons.version.AirbyteProtocolVersion;
@@ -68,6 +69,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -89,7 +91,7 @@ public class ConfigRepository {
   private static final String OPERATION_IDS_AGG_FIELD = "operation_ids_agg";
   private static final String OPERATION_IDS_AGG_DELIMITER = ",";
 
-  private final ConfigPersistence persistence;
+//  private final ConfigPersistence persistence;
   private final ExceptionWrappingDatabase database;
   private final ActorDefinitionMigrator actorDefinitionMigrator;
 
@@ -99,7 +101,7 @@ public class ConfigRepository {
 
   @VisibleForTesting
   ConfigRepository(final ConfigPersistence persistence, final Database database, final ActorDefinitionMigrator actorDefinitionMigrator) {
-    this.persistence = persistence;
+//    this.persistence = persistence;
     this.database = new ExceptionWrappingDatabase(database);
     this.actorDefinitionMigrator = actorDefinitionMigrator;
   }
@@ -123,12 +125,15 @@ public class ConfigRepository {
 
   public StandardWorkspace getStandardWorkspaceNoSecrets(final UUID workspaceId, final boolean includeTombstone)
       throws JsonValidationException, IOException, ConfigNotFoundException {
-    final StandardWorkspace workspace = persistence.getConfig(ConfigSchema.STANDARD_WORKSPACE, workspaceId.toString(), StandardWorkspace.class);
-
-    if (!MoreBooleans.isTruthy(workspace.getTombstone()) || includeTombstone) {
-      return workspace;
-    }
-    throw new ConfigNotFoundException(ConfigSchema.STANDARD_WORKSPACE, workspaceId.toString());
+    return database.query(ctx -> ctx.select(WORKSPACE.asterisk())
+        .from(WORKSPACE)
+        .where(WORKSPACE.ID.eq(workspaceId))
+        .and(includeTombstone ? noCondition() : WORKSPACE.TOMBSTONE.eq(true))
+        .fetch())
+        .stream()
+        .findFirst()
+        .map(DbConverter::buildStandardWorkspace)
+        .orElseThrow(() -> new ConfigNotFoundException(ConfigSchema.STANDARD_WORKSPACE, workspaceId));
   }
 
   public Optional<StandardWorkspace> getWorkspaceBySlugOptional(final String slug, final boolean includeTombstone)
@@ -147,22 +152,18 @@ public class ConfigRepository {
     return result.stream().findFirst().map(DbConverter::buildStandardWorkspace);
   }
 
-  public StandardWorkspace getWorkspaceBySlug(final String slug, final boolean includeTombstone)
-      throws JsonValidationException, IOException, ConfigNotFoundException {
+  public StandardWorkspace getWorkspaceBySlug(final String slug, final boolean includeTombstone) throws IOException, ConfigNotFoundException {
     return getWorkspaceBySlugOptional(slug, includeTombstone).orElseThrow(() -> new ConfigNotFoundException(ConfigSchema.STANDARD_WORKSPACE, slug));
   }
 
   public List<StandardWorkspace> listStandardWorkspaces(final boolean includeTombstone) throws JsonValidationException, IOException {
-
-    final List<StandardWorkspace> workspaces = new ArrayList<>();
-
-    for (final StandardWorkspace workspace : persistence.listConfigs(ConfigSchema.STANDARD_WORKSPACE, StandardWorkspace.class)) {
-      if (!MoreBooleans.isTruthy(workspace.getTombstone()) || includeTombstone) {
-        workspaces.add(workspace);
-      }
-    }
-
-    return workspaces;
+    return database.query(ctx -> ctx.select(WORKSPACE.asterisk())
+        .from(WORKSPACE)
+        .where(includeTombstone ? noCondition() : WORKSPACE.TOMBSTONE.eq(true))
+        .fetch())
+        .stream()
+        .map(DbConverter::buildStandardWorkspace)
+        .toList();
   }
 
   /**
@@ -175,30 +176,76 @@ public class ConfigRepository {
    * @throws IOException - you never know when you IO
    */
   public void writeStandardWorkspaceNoSecrets(final StandardWorkspace workspace) throws JsonValidationException, IOException {
-    persistence.writeConfig(ConfigSchema.STANDARD_WORKSPACE, workspace.getWorkspaceId().toString(), workspace);
+    database.transaction(ctx -> {
+      final OffsetDateTime timestamp = OffsetDateTime.now();
+      final boolean isExistingConfig = ctx.fetchExists(select()
+        .from(WORKSPACE)
+        .where(WORKSPACE.ID.eq(workspace.getWorkspaceId())));
+
+    if (isExistingConfig) {
+      ctx.update(WORKSPACE)
+          .set(WORKSPACE.ID, workspace.getWorkspaceId())
+          .set(WORKSPACE.CUSTOMER_ID, workspace.getCustomerId())
+          .set(WORKSPACE.NAME, workspace.getName())
+          .set(WORKSPACE.SLUG, workspace.getSlug())
+          .set(WORKSPACE.EMAIL, workspace.getEmail())
+          .set(WORKSPACE.INITIAL_SETUP_COMPLETE, workspace.getInitialSetupComplete())
+          .set(WORKSPACE.ANONYMOUS_DATA_COLLECTION, workspace.getAnonymousDataCollection())
+          .set(WORKSPACE.SEND_NEWSLETTER, workspace.getNews())
+          .set(WORKSPACE.SEND_SECURITY_UPDATES, workspace.getSecurityUpdates())
+          .set(WORKSPACE.DISPLAY_SETUP_WIZARD, workspace.getDisplaySetupWizard())
+          .set(WORKSPACE.TOMBSTONE, workspace.getTombstone() != null && workspace.getTombstone())
+          .set(WORKSPACE.NOTIFICATIONS, JSONB.valueOf(Jsons.serialize(workspace.getNotifications())))
+          .set(WORKSPACE.FIRST_SYNC_COMPLETE, workspace.getFirstCompletedSync())
+          .set(WORKSPACE.FEEDBACK_COMPLETE, workspace.getFeedbackDone())
+          .set(WORKSPACE.GEOGRAPHY, Enums.toEnum(
+              workspace.getDefaultGeography().value(),
+              io.airbyte.db.instance.configs.jooq.generated.enums.GeographyType.class).orElseThrow())
+          .set(WORKSPACE.UPDATED_AT, timestamp)
+          .set(WORKSPACE.WEBHOOK_OPERATION_CONFIGS, workspace.getWebhookOperationConfigs() == null ? null
+              : JSONB.valueOf(Jsons.serialize(workspace.getWebhookOperationConfigs())))
+          .where(WORKSPACE.ID.eq(workspace.getWorkspaceId()))
+          .execute();
+    } else {
+      ctx.insertInto(WORKSPACE)
+          .set(WORKSPACE.ID, workspace.getWorkspaceId())
+          .set(WORKSPACE.CUSTOMER_ID, workspace.getCustomerId())
+          .set(WORKSPACE.NAME, workspace.getName())
+          .set(WORKSPACE.SLUG, workspace.getSlug())
+          .set(WORKSPACE.EMAIL, workspace.getEmail())
+          .set(WORKSPACE.INITIAL_SETUP_COMPLETE, workspace.getInitialSetupComplete())
+          .set(WORKSPACE.ANONYMOUS_DATA_COLLECTION, workspace.getAnonymousDataCollection())
+          .set(WORKSPACE.SEND_NEWSLETTER, workspace.getNews())
+          .set(WORKSPACE.SEND_SECURITY_UPDATES, workspace.getSecurityUpdates())
+          .set(WORKSPACE.DISPLAY_SETUP_WIZARD, workspace.getDisplaySetupWizard())
+          .set(WORKSPACE.TOMBSTONE, workspace.getTombstone() != null && workspace.getTombstone())
+          .set(WORKSPACE.NOTIFICATIONS, JSONB.valueOf(Jsons.serialize(workspace.getNotifications())))
+          .set(WORKSPACE.FIRST_SYNC_COMPLETE, workspace.getFirstCompletedSync())
+          .set(WORKSPACE.FEEDBACK_COMPLETE, workspace.getFeedbackDone())
+          .set(WORKSPACE.CREATED_AT, timestamp)
+          .set(WORKSPACE.UPDATED_AT, timestamp)
+          .set(WORKSPACE.GEOGRAPHY, Enums.toEnum(
+              workspace.getDefaultGeography().value(),
+              io.airbyte.db.instance.configs.jooq.generated.enums.GeographyType.class).orElseThrow())
+          .set(WORKSPACE.WEBHOOK_OPERATION_CONFIGS, workspace.getWebhookOperationConfigs() == null ? null
+              : JSONB.valueOf(Jsons.serialize(workspace.getWebhookOperationConfigs())))
+          .execute();
+    }
+      return null;
+
+    });
   }
 
   public void setFeedback(final UUID workflowId) throws JsonValidationException, ConfigNotFoundException, IOException {
-    final StandardWorkspace workspace = getStandardWorkspaceNoSecrets(workflowId, false);
-
-    workspace.setFeedbackDone(true);
-
-    persistence.writeConfig(ConfigSchema.STANDARD_WORKSPACE, workspace.getWorkspaceId().toString(), workspace);
+    database.query(ctx -> ctx.update(WORKSPACE).set(WORKSPACE.FEEDBACK_COMPLETE, true).execute());
   }
 
   public StandardSourceDefinition getStandardSourceDefinition(final UUID sourceDefinitionId)
       throws JsonValidationException, IOException, ConfigNotFoundException {
-
-    final StandardSourceDefinition sourceDef = persistence.getConfig(
-        ConfigSchema.STANDARD_SOURCE_DEFINITION,
-        sourceDefinitionId.toString(),
-        StandardSourceDefinition.class);
-    // Make sure we have a default version of the Protocol.
-    // This corner case may happen for connectors that haven't been upgraded since we added versioning.
-    if (sourceDef != null) {
-      return sourceDef.withProtocolVersion(AirbyteProtocolVersion.getWithDefault(sourceDef.getProtocolVersion()).serialize());
-    }
-    return null;
+    return sourceDefQuery(Optional.of(sourceDefinitionId), true)
+        .findFirst()
+        // todo (cgardens) - returning null to retain original behavior. this should be standardized.
+        .orElse(null);
   }
 
   public StandardSourceDefinition getSourceDefinitionFromSource(final UUID sourceId) {
@@ -230,17 +277,20 @@ public class ConfigRepository {
   }
 
   public List<StandardSourceDefinition> listStandardSourceDefinitions(final boolean includeTombstone) throws JsonValidationException, IOException {
-    final List<StandardSourceDefinition> sourceDefinitions = new ArrayList<>();
-    for (final StandardSourceDefinition sourceDefinition : persistence.listConfigs(ConfigSchema.STANDARD_SOURCE_DEFINITION,
-        StandardSourceDefinition.class)) {
-      sourceDefinition.withProtocolVersion(AirbyteProtocolVersion
-          .getWithDefault(sourceDefinition.getSpec() != null ? sourceDefinition.getSpec().getProtocolVersion() : null).serialize());
-      if (!MoreBooleans.isTruthy(sourceDefinition.getTombstone()) || includeTombstone) {
-        sourceDefinitions.add(sourceDefinition);
-      }
-    }
+    return sourceDefQuery(Optional.empty(), includeTombstone).toList();
+  }
 
-    return sourceDefinitions;
+  private Stream<StandardSourceDefinition> sourceDefQuery(final Optional<UUID> sourceDefId, final boolean includeTombstone) throws IOException {
+    return database.query(ctx -> ctx.select(ACTOR_DEFINITION.asterisk())
+            .from(ACTOR_DEFINITION)
+            .where(ACTOR_DEFINITION.ACTOR_TYPE.eq(ActorType.source))
+            .and(sourceDefId.map(ACTOR_DEFINITION.ID::eq).orElse(noCondition()))
+            .and(includeTombstone ? noCondition() : WORKSPACE.TOMBSTONE.eq(true))
+            .fetchStream())
+        .map(DbConverter::buildStandardSourceDefinition)
+        // Make sure we have a default version of the Protocol.
+        // This corner case may happen for connectors that haven't been upgraded since we added versioning.
+        .map(sourceDef -> sourceDef.withProtocolVersion(AirbyteProtocolVersion.getWithDefault(sourceDef.getProtocolVersion()).serialize()))
   }
 
   public List<StandardSourceDefinition> listPublicSourceDefinitions(final boolean includeTombstone) throws IOException {
