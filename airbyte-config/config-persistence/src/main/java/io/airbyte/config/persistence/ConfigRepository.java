@@ -80,6 +80,7 @@ import org.jooq.Record;
 import org.jooq.Record2;
 import org.jooq.Result;
 import org.jooq.SelectJoinStep;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,8 +91,9 @@ public class ConfigRepository {
   private static final Logger LOGGER = LoggerFactory.getLogger(ConfigRepository.class);
   private static final String OPERATION_IDS_AGG_FIELD = "operation_ids_agg";
   private static final String OPERATION_IDS_AGG_DELIMITER = ",";
+  public static final String PRIMARY_KEY = "id";
 
-//  private final ConfigPersistence persistence;
+  //  private final ConfigPersistence persistence;
   private final ExceptionWrappingDatabase database;
   private final ActorDefinitionMigrator actorDefinitionMigrator;
 
@@ -337,11 +339,20 @@ public class ConfigRepository {
   }
 
   public void deleteStandardSourceDefinition(final UUID sourceDefId) throws IOException {
-    try {
-      persistence.deleteConfig(ConfigSchema.STANDARD_SOURCE_DEFINITION, sourceDefId.toString());
-    } catch (final ConfigNotFoundException e) {
+    if(!deleteById(ACTOR_DEFINITION, sourceDefId)) {
       LOGGER.info("Attempted to delete source definition with id: {}, but it does not exist", sourceDefId);
     }
+  }
+
+  /**
+   * Deletes all records with given id. If it deletes anything, returns true. Otherwise, false.
+   * @param table - table from which to delete the record
+   * @param id - id of the record to delete
+   * @return true if anything was deleted, otherwise false.
+   * @throws IOException - you never know when you io
+   */
+  private boolean deleteById(final Table<?> table, final UUID id) throws IOException {
+    return database.transaction(ctx -> ctx.deleteFrom(table)).where(DSL.field(DSL.name(PRIMARY_KEY)).eq(id)).execute() > 0;
   }
 
   public void deleteSourceDefinitionAndAssociations(final UUID sourceDefinitionId)
@@ -476,8 +487,7 @@ public class ConfigRepository {
         destinationDefinitionId);
   }
 
-  private <T> void deleteConnectorDefinitionAndAssociations(
-                                                            final ConfigSchema definitionType,
+  private <T> void deleteConnectorDefinitionAndAssociations(final ConfigSchema definitionType,
                                                             final ConfigSchema connectorType,
                                                             final Class<T> connectorClass,
                                                             final Function<T, UUID> connectorIdGetter,
