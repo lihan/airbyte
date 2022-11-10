@@ -1,14 +1,22 @@
 import React from "react";
 import { FormattedMessage } from "react-intl";
 
+import { faGear } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 import { Cell, Header } from "components/SimpleTableComponents";
+import { Button } from "components/ui/Button";
 import { CheckBox } from "components/ui/CheckBox";
 import { Text } from "components/ui/Text";
 import { InfoTooltip, TooltipLearnMoreLink } from "components/ui/Tooltip";
 
 import { useBulkEditService } from "hooks/services/BulkEdit/BulkEditService";
 import { useConnectionFormService } from "hooks/services/ConnectionForm/ConnectionFormService";
+import { useModalService } from "hooks/services/Modal";
 import { links } from "utils/links";
+
+import { DestinationNamespaceModal } from "./DestinationNamespaceModal";
+import { DestinationStreamNamesModal } from "./DestinationStreamNamesModal";
 
 import styles from "./CatalogTreeTableHeader.module.scss";
 
@@ -24,7 +32,10 @@ const TextCell: React.FC<React.PropsWithChildren<{ flex?: number }>> = ({ flex, 
 
 export const CatalogTreeTableHeader: React.FC = () => {
   const { mode } = useConnectionFormService();
+  const { openModal, closeModal } = useModalService();
   const { onCheckAll, selectedBatchNodeIds, allChecked } = useBulkEditService();
+
+  console.log(closeModal);
 
   return (
     <Header className={styles.headerContainer}>
@@ -68,9 +79,31 @@ export const CatalogTreeTableHeader: React.FC = () => {
       <div className={styles.arrowPlaceholder} />
       <TextCell flex={1}>
         <FormattedMessage id="form.namespace" />
+        <Button
+          variant="clear"
+          onClick={() =>
+            openModal({
+              title: "Destination namespace",
+              content: () => <DestinationNamespaceModal />,
+            })
+          }
+        >
+          <FontAwesomeIcon icon={faGear} />
+        </Button>
       </TextCell>
       <TextCell flex={1}>
         <FormattedMessage id="form.streamName" />
+        <Button
+          variant="clear"
+          onClick={() =>
+            openModal({
+              title: "Destination stream names",
+              content: () => <DestinationStreamNamesModal />,
+            })
+          }
+        >
+          <FontAwesomeIcon icon={faGear} />
+        </Button>
       </TextCell>
     </Header>
   );

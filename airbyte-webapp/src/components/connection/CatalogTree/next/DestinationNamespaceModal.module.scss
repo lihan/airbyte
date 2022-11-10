@@ -1,0 +1,18 @@
+@use "scss/variables";
+
+.content {
+  display: flex;
+  width: variables.$width-modal-xl;
+
+  .leftCell {
+    display: flex;
+    flex: 0 0 300px;
+    padding: variables.$spacing-md variables.$spacing-xl;
+  }
+
+  .rightCell {
+    display: flex;
+    flex: 0 0 100%;
+    padding: variables.$spacing-md variables.$spacing-xl;
+  }
+}
