@@ -17,7 +17,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.airbyte.commons.json.Jsons;
 import io.airbyte.commons.version.AirbyteProtocolVersion;
 import io.airbyte.config.ConfigSchema;
 import io.airbyte.config.DestinationConnection;
@@ -25,9 +24,7 @@ import io.airbyte.config.SourceConnection;
 import io.airbyte.config.StandardDestinationDefinition;
 import io.airbyte.config.StandardSourceDefinition;
 import io.airbyte.config.StandardSync;
-import io.airbyte.config.StandardSyncState;
 import io.airbyte.config.StandardWorkspace;
-import io.airbyte.config.State;
 import io.airbyte.db.Database;
 import io.airbyte.db.ExceptionWrappingDatabase;
 import io.airbyte.protocol.models.AirbyteStream;
@@ -63,7 +60,7 @@ class ConfigRepositoryTest {
   void setup() {
     configPersistence = mock(ConfigPersistence.class);
     database = mock(Database.class);
-    configRepository = spy(new ConfigRepository(configPersistence, database, new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database))));
+    configRepository = spy(new ConfigRepository(database, new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database))));
   }
 
   @AfterEach
@@ -117,20 +114,6 @@ class ConfigRepositoryTest {
     configRepository.getStandardWorkspaceFromConnection(connectionId, isTombstone);
 
     verify(configRepository).getStandardWorkspaceNoSecrets(WORKSPACE_ID, isTombstone);
-  }
-
-  @Test
-  void testUpdateConnectionState() throws Exception {
-    final UUID connectionId = UUID.randomUUID();
-    final State state1 = new State().withState(Jsons.deserialize("{ \"cursor\": 1 }"));
-    final StandardSyncState connectionState1 = new StandardSyncState().withConnectionId(connectionId).withState(state1);
-    final State state2 = new State().withState(Jsons.deserialize("{ \"cursor\": 2 }"));
-    final StandardSyncState connectionState2 = new StandardSyncState().withConnectionId(connectionId).withState(state2);
-
-    configRepository.updateConnectionState(connectionId, state1);
-    verify(configPersistence, times(1)).writeConfig(ConfigSchema.STANDARD_SYNC_STATE, connectionId.toString(), connectionState1);
-    configRepository.updateConnectionState(connectionId, state2);
-    verify(configPersistence, times(1)).writeConfig(ConfigSchema.STANDARD_SYNC_STATE, connectionId.toString(), connectionState2);
   }
 
   @Test

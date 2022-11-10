@@ -497,17 +497,6 @@ class StatePersistenceTest extends BaseDatabaseConfigPersistenceTest {
   }
 
   @Test
-  void testStatePersistenceLegacyReadConsistency() throws IOException {
-    final JsonNode jsonState = Jsons.deserialize("{\"my\": \"state\"}");
-    final State state = new State().withState(jsonState);
-    configRepository.updateConnectionState(connectionId, state);
-
-    final StateWrapper readStateWrapper = statePersistence.getCurrentState(connectionId).orElseThrow();
-    Assertions.assertEquals(StateType.LEGACY, readStateWrapper.getStateType());
-    Assertions.assertEquals(state.getState(), readStateWrapper.getLegacyState());
-  }
-
-  @Test
   void testStatePersistenceLegacyWriteConsistency() throws IOException {
     final JsonNode jsonState = Jsons.deserialize("{\"my\": \"state\"}");
     final StateWrapper stateWrapper = new StateWrapper().withStateType(StateType.LEGACY).withLegacyState(jsonState);
@@ -545,10 +534,7 @@ class StatePersistenceTest extends BaseDatabaseConfigPersistenceTest {
   }
 
   private void setupTestData() throws JsonValidationException, IOException {
-    configRepository = new ConfigRepository(
-        new DatabaseConfigPersistence(database),
-        database,
-        new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database)));
+    configRepository = new ConfigRepository(database, new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database)));
 
     final StandardWorkspace workspace = MockData.standardWorkspaces().get(0);
     final StandardSourceDefinition sourceDefinition = MockData.publicSourceDefinition();

@@ -9,6 +9,7 @@ import static io.airbyte.db.instance.configs.jooq.generated.Tables.ACTOR_CATALOG
 import static io.airbyte.db.instance.configs.jooq.generated.Tables.ACTOR_DEFINITION_WORKSPACE_GRANT;
 import static io.airbyte.db.instance.configs.jooq.generated.Tables.CONNECTION_OPERATION;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.jooq.impl.DSL.select;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,7 +18,6 @@ import static org.mockito.Mockito.spy;
 import io.airbyte.commons.json.Jsons;
 import io.airbyte.config.ActorCatalog;
 import io.airbyte.config.ActorCatalogFetchEvent;
-import io.airbyte.config.ConfigSchema;
 import io.airbyte.config.DestinationConnection;
 import io.airbyte.config.DestinationOAuthParameter;
 import io.airbyte.config.Geography;
@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
+import org.jooq.JSONB;
 import org.jooq.SQLDialect;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -76,7 +77,6 @@ class ConfigRepositoryE2EReadWriteTest {
   private DSLContext dslContext;
   private Database database;
   private ConfigRepository configRepository;
-  private DatabaseConfigPersistence configPersistence;
   private Flyway flyway;
   private final static String DOCKER_IMAGE_TAG = "1.2.0";
   private final static String CONFIG_HASH = "ConfigHash";
@@ -97,8 +97,7 @@ class ConfigRepositoryE2EReadWriteTest {
     flyway = FlywayFactory.create(dataSource, ConfigRepositoryE2EReadWriteTest.class.getName(), ConfigsDatabaseMigrator.DB_IDENTIFIER,
         ConfigsDatabaseMigrator.MIGRATION_FILE_LOCATION);
     database = new ConfigsDatabaseTestProvider(dslContext, flyway).create(false);
-    configPersistence = spy(new DatabaseConfigPersistence(database));
-    configRepository = spy(new ConfigRepository(configPersistence, database, new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database))));
+    configRepository = spy(new ConfigRepository(database, new ActorDefinitionMigrator(new ExceptionWrappingDatabase(database))));
     final ConfigsDatabaseMigrator configsDatabaseMigrator =
         new ConfigsDatabaseMigrator(database, flyway);
     final DevDatabaseMigrator devDatabaseMigrator = new DevDatabaseMigrator(configsDatabaseMigrator);
@@ -539,7 +538,7 @@ class ConfigRepositoryE2EReadWriteTest {
   @Test
   void testGetMostRecentActorCatalogFetchEventForSource() throws SQLException, IOException, JsonValidationException {
     for (final ActorCatalog actorCatalog : MockData.actorCatalogs()) {
-      configPersistence.writeConfig(ConfigSchema.ACTOR_CATALOG, actorCatalog.getId().toString(), actorCatalog);
+      writeActorCatalog(database, Collections.singletonList(actorCatalog));
     }
 
     final OffsetDateTime now = OffsetDateTime.now();
@@ -573,7 +572,7 @@ class ConfigRepositoryE2EReadWriteTest {
   @Test
   void testGetMostRecentActorCatalogFetchEventForSources() throws SQLException, IOException, JsonValidationException {
     for (final ActorCatalog actorCatalog : MockData.actorCatalogs()) {
-      configPersistence.writeConfig(ConfigSchema.ACTOR_CATALOG, actorCatalog.getId().toString(), actorCatalog);
+      writeActorCatalog(database, Collections.singletonList(actorCatalog));
     }
 
     database.transaction(ctx -> {
@@ -606,6 +605,39 @@ class ConfigRepositoryE2EReadWriteTest {
             ACTOR_CATALOG_FETCH_EVENT.MODIFIED_AT)
         .values(UUID.randomUUID(), sourceId, catalogId, "", "", creationDate, creationDate)
         .execute();
+  }
+
+  private static void writeActorCatalog(final Database database, final List<ActorCatalog> configs) throws IOException, SQLException {
+    database.transaction(ctx -> {
+      writeActorCatalog(configs, ctx);
+      return null;
+    });
+  }
+
+  private static void writeActorCatalog(final List<ActorCatalog> configs, final DSLContext ctx) {
+    final OffsetDateTime timestamp = OffsetDateTime.now();
+    configs.forEach((actorCatalog) -> {
+      final boolean isExistingConfig = ctx.fetchExists(select()
+          .from(ACTOR_CATALOG)
+          .where(ACTOR_CATALOG.ID.eq(actorCatalog.getId())));
+
+      if (isExistingConfig) {
+        ctx.update(ACTOR_CATALOG)
+            .set(ACTOR_CATALOG.CATALOG, JSONB.valueOf(Jsons.serialize(actorCatalog.getCatalog())))
+            .set(ACTOR_CATALOG.CATALOG_HASH, actorCatalog.getCatalogHash())
+            .set(ACTOR_CATALOG.MODIFIED_AT, timestamp)
+            .where(ACTOR_CATALOG.ID.eq(actorCatalog.getId()))
+            .execute();
+      } else {
+        ctx.insertInto(ACTOR_CATALOG)
+            .set(ACTOR_CATALOG.ID, actorCatalog.getId())
+            .set(ACTOR_CATALOG.CATALOG, JSONB.valueOf(Jsons.serialize(actorCatalog.getCatalog())))
+            .set(ACTOR_CATALOG.CATALOG_HASH, actorCatalog.getCatalogHash())
+            .set(ACTOR_CATALOG.CREATED_AT, timestamp)
+            .set(ACTOR_CATALOG.MODIFIED_AT, timestamp)
+            .execute();
+      }
+    });
   }
 
 }
