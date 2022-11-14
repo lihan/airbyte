@@ -17,12 +17,9 @@ const enum RadioButtonValueType {
 }
 
 export const DestinationNamespaceModal: React.FC = () => {
-  const t = (v: any) => {
-    console.log(v);
-  };
   return (
     <Formik
-      initialValues={{ radioButton: RadioButtonValueType.Mirror }}
+      initialValues={{ destination: RadioButtonValueType.Mirror, customFormat: null }}
       enableReinitialize
       onSubmit={() => console.log("hi")}
     >
@@ -30,42 +27,52 @@ export const DestinationNamespaceModal: React.FC = () => {
         <Form>
           <ModalBody className={styles.content} maxHeight={400} padded={false}>
             <div className={styles.actions}>
-              <Field name="radioButton">
+              <Field name="destination">
                 {({ field }: FieldProps<string>) => (
-                  <>
-                    <LabeledRadioButton
-                      {...field}
-                      className={styles.radioButton}
-                      id="destinationNamespace.mirror"
-                      label="Mirror source structure"
-                      value={RadioButtonValueType.Mirror}
-                      checked={field.value === RadioButtonValueType.Mirror}
-                    />
-                    <LabeledRadioButton
-                      {...field}
-                      className={styles.radioButton}
-                      id="destinationNamespace.default"
-                      label="Destination default"
-                      value={RadioButtonValueType.Default}
-                      checked={field.value === RadioButtonValueType.Default}
-                    />
-                    <LabeledRadioButton
-                      {...field}
-                      className={styles.radioButton}
-                      id="destinationNamespace.custom"
-                      label="Custom format"
-                      value={RadioButtonValueType.Custom}
-                      checked={field.value === RadioButtonValueType.Custom}
-                    />
-                  </>
+                  <LabeledRadioButton
+                    {...field}
+                    className={styles.radioButton}
+                    id="destinationNamespace.mirror"
+                    label="Mirror source structure"
+                    value={RadioButtonValueType.Mirror}
+                    checked={field.value === RadioButtonValueType.Mirror}
+                  />
+                )}
+              </Field>
+              <Field name="destination">
+                {({ field }: FieldProps<string>) => (
+                  <LabeledRadioButton
+                    {...field}
+                    className={styles.radioButton}
+                    id="destinationNamespace.default"
+                    label="Destination default"
+                    value={RadioButtonValueType.Default}
+                    checked={field.value === RadioButtonValueType.Default}
+                  />
+                )}
+              </Field>
+              <Field name="destination">
+                {({ field }: FieldProps<string>) => (
+                  <LabeledRadioButton
+                    {...field}
+                    className={styles.radioButton}
+                    id="destinationNamespace.custom"
+                    label="Custom format"
+                    value={RadioButtonValueType.Custom}
+                    checked={field.value === RadioButtonValueType.Custom}
+                  />
                 )}
               </Field>
               <div className={styles.input}>
-                {t(values)}
-                <Input
-                  disabled={values.radioButton !== RadioButtonValueType.Custom}
-                  placeholder="airbyte_prod_cloudapi"
-                />
+                <Field name="customFormat">
+                  {({ field }: FieldProps<string>) => (
+                    <Input
+                      {...field}
+                      disabled={values.destination !== RadioButtonValueType.Custom}
+                      placeholder="airbyte_prod_cloudapi"
+                    />
+                  )}
+                </Field>
               </div>
             </div>
             <div className={styles.description}>
@@ -79,8 +86,10 @@ export const DestinationNamespaceModal: React.FC = () => {
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button variant="secondary">Cancel</Button>
-            <Button>Apply</Button>
+            <Button type="button" variant="secondary">
+              Cancel
+            </Button>
+            <Button type="submit">Apply</Button>
           </ModalFooter>
         </Form>
       )}
