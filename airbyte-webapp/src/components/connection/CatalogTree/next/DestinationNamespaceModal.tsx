@@ -1,6 +1,6 @@
 import { Field, FieldProps, Form, Formik } from "formik";
 import React from "react";
-// import { FormattedMessage } from "react-intl";
+import { FormattedMessage } from "react-intl";
 
 import { Input } from "components/ui/Input";
 import { ModalBody, ModalFooter } from "components/ui/Modal";
@@ -16,10 +16,14 @@ const enum RadioButtonValueType {
   Custom = "custom",
 }
 
-export const DestinationNamespaceModal: React.FC = () => {
+interface DestinationNamespaceModalProps {
+  closeModal: () => void;
+}
+
+export const DestinationNamespaceModal: React.FC<DestinationNamespaceModalProps> = ({ closeModal }) => {
   return (
     <Formik
-      initialValues={{ destination: RadioButtonValueType.Mirror, customFormat: null }}
+      initialValues={{ destinationNamespace: RadioButtonValueType.Mirror, customFormat: "" }}
       enableReinitialize
       onSubmit={() => console.log("hi")}
     >
@@ -27,37 +31,37 @@ export const DestinationNamespaceModal: React.FC = () => {
         <Form>
           <ModalBody className={styles.content} maxHeight={400} padded={false}>
             <div className={styles.actions}>
-              <Field name="destination">
+              <Field name="destinationNamespace">
                 {({ field }: FieldProps<string>) => (
                   <LabeledRadioButton
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.mirror"
-                    label="Mirror source structure"
+                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.mirror" />}
                     value={RadioButtonValueType.Mirror}
                     checked={field.value === RadioButtonValueType.Mirror}
                   />
                 )}
               </Field>
-              <Field name="destination">
+              <Field name="destinationNamespace">
                 {({ field }: FieldProps<string>) => (
                   <LabeledRadioButton
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.default"
-                    label="Destination default"
+                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.default" />}
                     value={RadioButtonValueType.Default}
                     checked={field.value === RadioButtonValueType.Default}
                   />
                 )}
               </Field>
-              <Field name="destination">
+              <Field name="destinationNamespace">
                 {({ field }: FieldProps<string>) => (
                   <LabeledRadioButton
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.custom"
-                    label="Custom format"
+                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.custom" />}
                     value={RadioButtonValueType.Custom}
                     checked={field.value === RadioButtonValueType.Custom}
                   />
@@ -68,7 +72,7 @@ export const DestinationNamespaceModal: React.FC = () => {
                   {({ field }: FieldProps<string>) => (
                     <Input
                       {...field}
-                      disabled={values.destination !== RadioButtonValueType.Custom}
+                      disabled={values.destinationNamespace !== RadioButtonValueType.Custom}
                       placeholder="airbyte_prod_cloudapi"
                     />
                   )}
@@ -76,20 +80,29 @@ export const DestinationNamespaceModal: React.FC = () => {
               </div>
             </div>
             <div className={styles.description}>
-              <Text>
-                Replicate to the default namespace in the destination, which will differ based on your destination.
-              </Text>
+              {values.destinationNamespace === RadioButtonValueType.Mirror && (
+                <Text>
+                  <FormattedMessage id="connectionForm.modal.destinationNamespace.mirror.description" />
+                </Text>
+              )}
+              {(values.destinationNamespace === RadioButtonValueType.Default ||
+                values.destinationNamespace === RadioButtonValueType.Custom) && (
+                <Text>
+                  <FormattedMessage id="connectionForm.modal.destinationNamespace.default.description" />
+                </Text>
+              )}
               <Text className={styles.secondaryText}>
-                The following table summarises how this works. We assume an example of replication configurations
-                between a Postgres Source and Snowflake Destination (with settings of schema = "my_schema"):
+                <FormattedMessage id="connectionForm.modal.destinationNamespace.description" />
               </Text>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button type="button" variant="secondary">
-              Cancel
+            <Button type="button" variant="secondary" onClick={closeModal}>
+              <FormattedMessage id="connectionForm.modal.destinationNamespace.action.cancel" />
             </Button>
-            <Button type="submit">Apply</Button>
+            <Button type="submit">
+              <FormattedMessage id="connectionForm.modal.destinationNamespace.action.apply" />
+            </Button>
           </ModalFooter>
         </Form>
       )}

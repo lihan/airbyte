@@ -33,8 +33,6 @@ export const CatalogTreeTableHeader: React.FC = () => {
   const { openModal, closeModal } = useModalService();
   const { onCheckAll, selectedBatchNodeIds, allChecked } = useBulkEditService();
 
-  console.log(closeModal);
-
   return (
     <Header className={styles.headerContainer}>
       <div className={styles.checkboxCell}>
@@ -81,9 +79,9 @@ export const CatalogTreeTableHeader: React.FC = () => {
           variant="clear"
           onClick={() =>
             openModal({
-              size: "xl",
-              title: "Destination namespace",
-              content: () => <DestinationNamespaceModal />,
+              size: "lg",
+              title: <FormattedMessage id="connectionForm.modal.destinationNamespace.title" />,
+              content: () => <DestinationNamespaceModal closeModal={closeModal} />,
             })
           }
         >
@@ -96,7 +94,7 @@ export const CatalogTreeTableHeader: React.FC = () => {
           variant="clear"
           onClick={() =>
             openModal({
-              size: "xl",
+              size: "lg",
               title: "Destination stream names",
               content: () => <DestinationStreamNamesModal />,
             })
