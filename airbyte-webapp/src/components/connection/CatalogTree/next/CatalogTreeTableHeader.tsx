@@ -1,8 +1,7 @@
-import React from "react";
-import { FormattedMessage } from "react-intl";
-
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React from "react";
+import { FormattedMessage } from "react-intl";
 
 import { Cell, Header } from "components/SimpleTableComponents";
 import { Button } from "components/ui/Button";
@@ -15,10 +14,9 @@ import { useConnectionFormService } from "hooks/services/ConnectionForm/Connecti
 import { useModalService } from "hooks/services/Modal";
 import { links } from "utils/links";
 
+import styles from "./CatalogTreeTableHeader.module.scss";
 import { DestinationNamespaceModal } from "./DestinationNamespaceModal";
 import { DestinationStreamNamesModal } from "./DestinationStreamNamesModal";
-
-import styles from "./CatalogTreeTableHeader.module.scss";
 
 const TextCell: React.FC<React.PropsWithChildren<{ flex?: number }>> = ({ flex, children }) => {
   return (
