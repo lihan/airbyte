@@ -83,6 +83,7 @@ export const CatalogTreeTableHeader: React.FC = () => {
           variant="clear"
           onClick={() =>
             openModal({
+              size: "xl",
               title: "Destination namespace",
               content: () => <DestinationNamespaceModal />,
             })
@@ -97,6 +98,7 @@ export const CatalogTreeTableHeader: React.FC = () => {
           variant="clear"
           onClick={() =>
             openModal({
+              size: "xl",
               title: "Destination stream names",
               content: () => <DestinationStreamNamesModal />,
             })

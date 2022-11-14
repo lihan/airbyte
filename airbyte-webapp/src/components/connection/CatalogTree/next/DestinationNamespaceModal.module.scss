@@ -1,18 +1,34 @@
+@use "scss/colors";
 @use "scss/variables";
 
 .content {
   display: flex;
-  width: variables.$width-modal-xl;
+}
 
-  .leftCell {
-    display: flex;
-    flex: 0 0 300px;
-    padding: variables.$spacing-md variables.$spacing-xl;
+.actions, .description {
+  display: flex;
+  flex-direction: column;
+  padding: variables.$spacing-xl;
+}
+
+.actions {
+  flex: 0 0 300px;
+
+  .radioButton + .radioButton {
+    margin-top: variables.$spacing-xl;
   }
 
-  .rightCell {
-    display: flex;
-    flex: 0 0 100%;
-    padding: variables.$spacing-md variables.$spacing-xl;
+  .input {
+    margin: variables.$spacing-xl 0 0 variables.$spacing-xl;
+  }
+}
+
+.description {
+  flex: 1 0 0;
+  background-color: colors.$grey-50;
+
+  .secondaryText {
+    color: colors.$grey;
+    margin-top: variables.$spacing-xl;
   }
 }
