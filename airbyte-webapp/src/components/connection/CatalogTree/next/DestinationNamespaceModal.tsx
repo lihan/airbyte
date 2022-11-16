@@ -2,12 +2,12 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import React from "react";
 import { FormattedMessage } from "react-intl";
 
+import { Button } from "components/ui/Button";
 import { Input } from "components/ui/Input";
 import { ModalBody, ModalFooter } from "components/ui/Modal";
 import { Text } from "components/ui/Text";
 
 import LabeledRadioButton from "../../../LabeledRadioButton";
-import { Button } from "../../../ui/Button";
 import styles from "./DestinationNamespaceModal.module.scss";
 
 const enum RadioButtonValueType {

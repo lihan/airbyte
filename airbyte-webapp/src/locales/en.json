@@ -164,6 +164,7 @@
   "connectionForm.modal.destinationStreamNames.radioButton.mirror": "Mirror source name",
   "connectionForm.modal.destinationStreamNames.radioButton.prefix": "Add a prefix",
   "connectionForm.modal.destinationStreamNames.description": "Define the final table name in the destination",
+  "connectionForm.modal.destinationStreamNames.prefix.message": "Add a prefix to stream names (ex. “airbyte_” causes “projects” => “airbyte_projects”)",
   "connectionForm.modal.destinationStreamNames.action.cancel": "Cancel",
   "connectionForm.modal.destinationStreamNames.action.apply": "Apply",
 

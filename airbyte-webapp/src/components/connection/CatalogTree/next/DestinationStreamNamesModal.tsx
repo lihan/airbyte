@@ -2,11 +2,13 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import React from "react";
 import { FormattedMessage } from "react-intl";
 
+import { Button } from "components/ui/Button";
+import { Input } from "components/ui/Input";
+import { ModalBody, ModalFooter } from "components/ui/Modal";
+import { Text } from "components/ui/Text";
+import { InfoTooltip } from "components/ui/Tooltip";
+
 import LabeledRadioButton from "../../../LabeledRadioButton";
-import { Button } from "../../../ui/Button";
-import { Input } from "../../../ui/Input";
-import { ModalBody, ModalFooter } from "../../../ui/Modal";
-import { Text } from "../../../ui/Text";
 import styles from "./DestinationStreamNamesModal.module.scss";
 
 const enum RadioButtonValueType {
@@ -56,6 +58,9 @@ export const DestinationStreamNamesModal: React.FC<DestinationStreamNamesModalPr
                   label={
                     <Text as="span">
                       <FormattedMessage id="connectionForm.modal.destinationStreamNames.radioButton.prefix" />
+                      <InfoTooltip placement="top-start">
+                        <FormattedMessage id="connectionForm.modal.destinationStreamNames.prefix.message" />
+                      </InfoTooltip>
                     </Text>
                   }
                   value={RadioButtonValueType.Prefix}
