@@ -160,6 +160,13 @@
   "connectionForm.modal.destinationNamespace.action.cancel": "Cancel",
   "connectionForm.modal.destinationNamespace.action.apply": "Apply",
 
+  "connectionForm.modal.destinationStreamNames.title": "Destination stream names",
+  "connectionForm.modal.destinationStreamNames.radioButton.mirror": "Mirror source name",
+  "connectionForm.modal.destinationStreamNames.radioButton.prefix": "Add a prefix",
+  "connectionForm.modal.destinationStreamNames.description": "Define the final table name in the destination",
+  "connectionForm.modal.destinationStreamNames.action.cancel": "Cancel",
+  "connectionForm.modal.destinationStreamNames.action.apply": "Apply",
+
   "connectorForm.authenticate": "Authenticate your {connector} account",
   "connectorForm.signInWithGoogle": "Sign in with Google",
   "connectorForm.authenticate.succeeded": "Authentication succeeded!",

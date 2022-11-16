@@ -23,7 +23,7 @@ interface DestinationNamespaceModalProps {
 export const DestinationNamespaceModal: React.FC<DestinationNamespaceModalProps> = ({ closeModal }) => {
   return (
     <Formik
-      initialValues={{ destinationNamespace: RadioButtonValueType.Mirror, customFormat: "" }}
+      initialValues={{ destinationNamespace: RadioButtonValueType.Mirror, customFormat: "${SOURCE_NAMESPACE}" }}
       enableReinitialize
       onSubmit={() => console.log("hi")}
     >
@@ -37,7 +37,11 @@ export const DestinationNamespaceModal: React.FC<DestinationNamespaceModalProps>
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.mirror"
-                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.mirror" />}
+                    label={
+                      <Text as="span">
+                        <FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.mirror" />
+                      </Text>
+                    }
                     value={RadioButtonValueType.Mirror}
                     checked={field.value === RadioButtonValueType.Mirror}
                   />
@@ -49,7 +53,11 @@ export const DestinationNamespaceModal: React.FC<DestinationNamespaceModalProps>
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.default"
-                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.default" />}
+                    label={
+                      <Text as="span">
+                        <FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.default" />
+                      </Text>
+                    }
                     value={RadioButtonValueType.Default}
                     checked={field.value === RadioButtonValueType.Default}
                   />
@@ -61,7 +69,11 @@ export const DestinationNamespaceModal: React.FC<DestinationNamespaceModalProps>
                     {...field}
                     className={styles.radioButton}
                     id="destinationNamespace.custom"
-                    label={<FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.custom" />}
+                    label={
+                      <Text as="span">
+                        <FormattedMessage id="connectionForm.modal.destinationNamespace.radioButton.custom" />
+                      </Text>
+                    }
                     value={RadioButtonValueType.Custom}
                     checked={field.value === RadioButtonValueType.Custom}
                   />

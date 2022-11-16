@@ -94,9 +94,9 @@ export const CatalogTreeTableHeader: React.FC = () => {
           variant="clear"
           onClick={() =>
             openModal({
-              size: "lg",
-              title: "Destination stream names",
-              content: () => <DestinationStreamNamesModal />,
+              size: "sm",
+              title: <FormattedMessage id="connectionForm.modal.destinationStreamNames.title" />,
+              content: () => <DestinationStreamNamesModal closeModal={closeModal} />,
             })
           }
         >
