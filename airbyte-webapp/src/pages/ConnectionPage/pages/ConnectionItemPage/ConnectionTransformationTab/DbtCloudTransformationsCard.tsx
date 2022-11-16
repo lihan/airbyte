@@ -5,7 +5,6 @@ import { Form, Formik, FieldArray, FormikHelpers } from "formik";
 import { ReactNode } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link } from "react-router-dom";
-import * as yup from "yup";
 
 import { FormChangeTracker } from "components/common/FormChangeTracker";
 import { Button } from "components/ui/Button";
@@ -32,15 +31,6 @@ import octaviaWorker from "./octavia-worker.png";
 interface DbtJobListValues {
   jobs: DbtCloudJob[];
 }
-
-const dbtCloudJobListSchema = yup.object({
-  jobs: yup.array().of(
-    yup.object({
-      account: yup.number().required().positive().integer(),
-      job: yup.number().required().positive().integer(),
-    })
-  ),
-});
 
 export const DbtCloudTransformationsCard = ({ connection }: { connection: WebBackendConnectionRead }) => {
   // Possible render paths:
@@ -107,7 +97,6 @@ const DbtJobsForm: React.FC<DbtJobsFormProps> = ({ saveJobs, dbtCloudJobs }) => 
     <Formik
       onSubmit={onSubmit}
       initialValues={{ jobs }}
-      validationSchema={dbtCloudJobListSchema}
       render={({ values, isValid, dirty }) => {
         return (
           <Form className={styles.jobListForm}>
