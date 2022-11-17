@@ -151,12 +151,13 @@
   "connectionForm.bulkEdit.apply": "Apply",
 
   "connectionForm.modal.destinationNamespace.title": "Destination namespace",
-  "connectionForm.modal.destinationNamespace.radioButton.mirror": "Mirror source structure",
-  "connectionForm.modal.destinationNamespace.radioButton.default": "Destination default",
-  "connectionForm.modal.destinationNamespace.radioButton.custom": "Custom format",
+  "connectionForm.modal.destinationNamespace.option.source": "Mirror source structure",
+  "connectionForm.modal.destinationNamespace.option.destination": "Destination default",
+  "connectionForm.modal.destinationNamespace.option.customFormat": "Custom format",
+  "connectionForm.modal.destinationNamespace.input.placeholder": "My namespace",
+  "connectionForm.modal.destinationNamespace.option.source.description": "Replicate to the default namespace in the destination, which will differ based on your destination.",
+  "connectionForm.modal.destinationNamespace.option.destination.description": "All stream will be replicated and store in the default namespace defined on the destination settings page.",
   "connectionForm.modal.destinationNamespace.description": "The following table summarises how this works. We assume an example of replication configurations between a Postgres Source and Snowflake Destination (with settings of schema = \"my_schema\"):",
-  "connectionForm.modal.destinationNamespace.mirror.description": "Replicate to the default namespace in the destination, which will differ based on your destination.",
-  "connectionForm.modal.destinationNamespace.default.description": "All stream will be replicated and store in the default namespace defined on the destination settings page.",
   "connectionForm.modal.destinationNamespace.action.cancel": "Cancel",
   "connectionForm.modal.destinationNamespace.action.apply": "Apply",
 

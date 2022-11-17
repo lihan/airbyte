@@ -1,5 +1,6 @@
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useFormikContext } from "formik";
 import React from "react";
 import { FormattedMessage } from "react-intl";
 
@@ -14,6 +15,8 @@ import { useConnectionFormService } from "hooks/services/ConnectionForm/Connecti
 import { useModalService } from "hooks/services/Modal";
 import { links } from "utils/links";
 
+import { NamespaceDefinitionType } from "../../../../core/request/AirbyteClient";
+import { FormikConnectionFormValues } from "../../../../views/Connection/ConnectionForm/formConfig";
 import styles from "./CatalogTreeTableHeader.module.scss";
 import { DestinationNamespaceModal } from "./DestinationNamespaceModal";
 import { DestinationStreamNamesModal } from "./DestinationStreamNamesModal";
@@ -32,6 +35,17 @@ export const CatalogTreeTableHeader: React.FC = () => {
   const { mode } = useConnectionFormService();
   const { openModal, closeModal } = useModalService();
   const { onCheckAll, selectedBatchNodeIds, allChecked } = useBulkEditService();
+  const formikProps = useFormikContext<FormikConnectionFormValues>();
+
+  // const destinationNamespaceChange = ({ namespaceDefinition, namespaceFormat }) => {
+  const destinationNamespaceChange = (value: any) => {
+    console.log(formikProps);
+    formikProps.setFieldValue("namespaceDefinition", value.namespaceDefinition);
+
+    if (value.namespaceDefinition === NamespaceDefinitionType.customformat) {
+      formikProps.setFieldValue("namespaceFormat", value.namespaceFormat);
+    }
+  };
 
   return (
     <Header className={styles.headerContainer}>
@@ -81,7 +95,16 @@ export const CatalogTreeTableHeader: React.FC = () => {
             openModal({
               size: "lg",
               title: <FormattedMessage id="connectionForm.modal.destinationNamespace.title" />,
-              content: () => <DestinationNamespaceModal closeModal={closeModal} />,
+              content: () => (
+                <DestinationNamespaceModal
+                  initialValues={{
+                    namespaceDefinition: formikProps.values.namespaceDefinition,
+                    namespaceFormat: formikProps.values.namespaceFormat,
+                  }}
+                  closeModal={closeModal}
+                  onChange={destinationNamespaceChange}
+                />
+              ),
             })
           }
         >
